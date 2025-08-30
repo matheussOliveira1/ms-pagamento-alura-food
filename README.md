@@ -1,2 +1,2 @@
-# mc-pagamento-alura-food
+# ms-pagamento-alura-food
 Estudo de microsservico de pagamento java + spring, no contexto do projeto Alura Food
