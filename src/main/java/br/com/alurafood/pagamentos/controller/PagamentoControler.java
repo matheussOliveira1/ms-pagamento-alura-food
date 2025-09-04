@@ -5,6 +5,8 @@ import br.com.alurafood.pagamentos.service.PagamentoService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +24,9 @@ public class PagamentoControler {
     @Autowired
     private PagamentoService pagamentoService;
 
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
     @GetMapping
     public Page<PagamentoDto> listar(@PageableDefault(size = 10) Pageable paginacao) {
         return pagamentoService.obterTodos(paginacao);
@@ -37,6 +42,11 @@ public class PagamentoControler {
     public ResponseEntity<PagamentoDto> cadastrar(@RequestBody @Valid PagamentoDto dto, UriComponentsBuilder uriBuilder) {
         PagamentoDto pagamento = pagamentoService.criarPagamento(dto);
         URI endereco = uriBuilder.path("/pagamentos/{id}").buildAndExpand(pagamento.getId()).toUri();
+
+        Message message = new Message(("Criei um pagamento com o id: " + pagamento.getId()).getBytes());
+        // rabbitTemplate.send("pagamento.concluido", message); -> Usando tipo de mensagem padrao
+
+        rabbitTemplate.convertAndSend("pagamentos.ex", "", pagamento);
 
         return ResponseEntity.created(endereco).body(pagamento);
     }
